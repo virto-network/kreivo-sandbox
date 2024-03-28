@@ -6,7 +6,7 @@
     "@acala-network/chopsticks": "^0.9.13"
   },
   "scripts": {
-    "kreivo-ah:kusama": "node --loader ts-node/esm kusama/kreivo-ah.ts"
+    "kusama:kreivo-ah": "node --loader ts-node/esm kusama/kreivo-ah.ts"
   },
   "devDependencies": {
     "@tsconfig/node21": "^21.0.3",

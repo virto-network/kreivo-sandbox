@@ -79,29 +79,8 @@ setStorage(assetHub.chain, {
 } as StorageValues);
 
 setStorage(kreivo.chain, {
-  AssetRegistry: {
-    AssetIdMultiLocation: [
-      [
-        [1984],
-        {
-          parents: 1,
-          interior: {
-            X3: [
-              {
-                Parachain: 1000,
-              },
-              {
-                PalletInstance: 50,
-              },
-              {
-                GeneralIndex: 1984,
-              },
-            ],
-          },
-        },
-      ],
-    ],
-    AssetMultiLocationId: [
+  Assets: {
+    Asset: [
       [
         [
           {
@@ -121,14 +100,6 @@ setStorage(kreivo.chain, {
             },
           },
         ],
-        1984,
-      ],
-    ],
-  },
-  Assets: {
-    Asset: [
-      [
-        [1984],
         {
           owner: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
           issuer: "HNZata7iMYWmk5RvZRTiAsSDhV8366zq2YGb3tLH5Upf74F",
