@@ -84,19 +84,10 @@ setStorage(kreivo.chain, {
       [
         [
           {
-            parents: 1,
-            interior: {
-              X3: [
-                {
-                  Parachain: 1000,
-                },
-                {
-                  PalletInstance: 50,
-                },
-                {
-                  GeneralIndex: 1984,
-                },
-              ],
+            sibling: {
+              id: 1000,
+              pallet: 50,
+              index: 1984,
             },
           },
         ],
