@@ -3,10 +3,14 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@acala-network/chopsticks": "^0.9.13"
+    "@acala-network/chopsticks": "^0.9.13",
+    "@polkadot/api": "^10.12.6",
+    "@polkadot/wasm-crypto": "^7.3.2",
+    "hash-wasm": "^4.11.0"
   },
   "scripts": {
-    "kusama:kreivo-ah": "node --loader ts-node/esm kusama/kreivo-ah.ts"
+    "kusama:kreivo-ah": "node --loader ts-node/esm kusama/kreivo-ah.ts",
+    "kusama:kreivo-upgrade": "node --loader ts-node/esm kusama/kreivo-upgrade.ts"
   },
   "devDependencies": {
     "@tsconfig/node21": "^21.0.3",
