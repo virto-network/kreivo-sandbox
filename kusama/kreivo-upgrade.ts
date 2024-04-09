@@ -1,3 +1,6 @@
+import assert from "node:assert";
+import { readFile } from "node:fs/promises";
+
 import {
   BuildBlockMode,
   ChopsticksProvider,
@@ -5,15 +8,20 @@ import {
   setupWithServer,
   StorageValues,
 } from "@acala-network/chopsticks";
-import { createHash } from "node:crypto";
-import { readFile, open, type FileHandle } from "node:fs/promises";
-
 import { connectVertical } from "@acala-network/chopsticks-core";
 
 import { ApiPromise, Keyring } from "@polkadot/api";
 import { waitReady } from "@polkadot/wasm-crypto";
 import { u8aToHex } from "@polkadot/util";
 import { blake2b } from "hash-wasm";
+
+await waitReady();
+const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
+const ALICE = keyring.addFromUri("//Alice");
+const BOB = keyring.addFromUri("//Bob");
+
+console.log("ALICE", ALICE.address);
+console.log("BOB", BOB.address);
 
 console.log("Connect Kusama");
 const kusama = await setupWithServer({
@@ -31,19 +39,14 @@ const kreivo = await setupWithServer({
   port: 8002,
 });
 
-await waitReady();
-const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
-const ALICE = keyring.addFromUri("//Alice");
-const BOB = keyring.addFromUri("//Bob");
+console.log("Connect Kusama > Kreivo");
+await connectVertical(kusama.chain, kreivo.chain);
 
 console.log(`
 
 ===== SUDO Updating to ALICE =====
 
 `);
-
-console.log("ALICE", ALICE.address);
-console.log("BOB", BOB.address);
 
 setStorage(kreivo.chain, {
   System: {
@@ -79,9 +82,6 @@ console.log(`
 
 `);
 
-console.log("Connect Kusama > Kreivo");
-await connectVertical(kusama.chain, kreivo.chain);
-
 const newWasmRuntimePath = `${process.cwd()}/kreivo_runtime.compact.compressed.wasm`;
 const newWasmRuntime = await readFile(newWasmRuntimePath);
 const hash = await blake2b(newWasmRuntime, 256);
@@ -90,23 +90,42 @@ const api = await ApiPromise.create({
   provider: new ChopsticksProvider(kreivo.chain),
 });
 
-// code hash 0x202130657ca14921309a4dd111a5f5fcde3ea7924b786cc50ff56ccb0399e019?
-console.log("code hash", hash);
+const lastRuntimeVersion = (
+  await api.rpc.state.getRuntimeVersion()
+).specVersion.toNumber();
 
-console.log("Authorizing upgrade");
+console.log(`
+
+===== UPGRADE: Authorizing =====
+
+`);
+
 await api.tx.sudo
   .sudo(api.tx.parachainSystem.authorizeUpgrade(`0x${hash}`, true))
   .signAndSend(ALICE);
 
-console.log("Enacting authorized upgrade");
+console.log(`
+
+===== UPGRADE: Enacting Authorized =====
+
+`);
+
 await api.tx.parachainSystem
   .enactAuthorizedUpgrade(u8aToHex(newWasmRuntime))
   .signAndSend(BOB);
 
-for (let i = 0; i < 900; i++) {
+for (let i = 0; i < 2; i++) {
   await kusama.chain.newBlock();
   await kreivo.chain.newBlock();
 }
 
-const runtimeVersion = await api.rpc.state.getRuntimeVersion();
-console.log(runtimeVersion.toHuman(true));
+const runtimeVersion = (
+  await api.rpc.state.getRuntimeVersion()
+).specVersion.toNumber();
+
+assert(runtimeVersion >= lastRuntimeVersion);
+
+await kusama.close();
+await kreivo.close();
+
+process.exit(0);
