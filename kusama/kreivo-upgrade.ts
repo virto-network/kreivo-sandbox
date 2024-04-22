@@ -17,10 +17,8 @@ import { blake2b } from "hash-wasm";
 
 await waitReady();
 const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
-const ALICE = keyring.addFromUri("//Alice");
-const BOB = keyring.addFromUri("//Bob");
 
-console.log("ALICE", ALICE.address);
+const BOB = keyring.addFromUri("//Bob");
 console.log("BOB", BOB.address);
 
 console.log("Connect Kusama");
@@ -44,22 +42,13 @@ await connectVertical(kusama.chain, kreivo.chain);
 
 console.log(`
 
-===== SUDO Updating to ALICE =====
+===== Loading Balance to BOB =====
 
 `);
 
 setStorage(kreivo.chain, {
   System: {
     Account: [
-      [
-        [ALICE.address],
-        {
-          providers: 1,
-          data: {
-            free: 1e15,
-          },
-        },
-      ],
       [
         [BOB.address],
         {
@@ -71,16 +60,7 @@ setStorage(kreivo.chain, {
       ],
     ],
   },
-  Sudo: {
-    Key: ALICE.address,
-  },
 } as StorageValues);
-
-console.log(`
-
-===== SUDO Updated: Now is ALICE =====
-
-`);
 
 const newWasmRuntimePath = `${process.cwd()}/kreivo_runtime.compact.compressed.wasm`;
 const newWasmRuntime = await readFile(newWasmRuntimePath);
@@ -93,16 +73,32 @@ const api = await ApiPromise.create({
 const lastRuntimeVersion = (
   await api.rpc.state.getRuntimeVersion()
 ).specVersion.toNumber();
+const blockNumber = kreivo.chain.head.number;
 
-console.log(`
+console.log(`===== UPGRADE: Authorizing Upgrade =====`);
 
-===== UPGRADE: Authorizing =====
-
-`);
-
-await api.tx.sudo
-  .sudo(api.tx.parachainSystem.authorizeUpgrade(`0x${hash}`, true))
-  .signAndSend(ALICE);
+setStorage(kreivo.chain, {
+  Scheduler: {
+    Agenda: [
+      [
+        [blockNumber + 1],
+        [
+          {
+            priority: 128,
+            call: {
+              Inline: api.tx.parachainSystem
+                .authorizeUpgrade(`0x${hash}`, false)
+                .method.toHex(),
+            },
+            origin: {
+              System: "Root",
+            },
+          },
+        ],
+      ],
+    ],
+  },
+} as StorageValues);
 
 console.log(`
 
@@ -123,7 +119,7 @@ const runtimeVersion = (
   await api.rpc.state.getRuntimeVersion()
 ).specVersion.toNumber();
 
-assert(runtimeVersion >= lastRuntimeVersion);
+assert(runtimeVersion > lastRuntimeVersion);
 
 await kusama.close();
 await kreivo.close();
