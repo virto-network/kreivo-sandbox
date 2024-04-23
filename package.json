@@ -1,15 +1,9 @@
 {
-  "name": "@virto-network/kreivo-sandbox",
+  "name": "@virtonetwork/kreivo-sandbox",
+  "version": "1.0.2",
   "type": "module",
-  "dependencies": {
-    "@acala-network/chopsticks": "^0.9.13",
-    "@polkadot/api": "^10.12.6",
-    "@polkadot/wasm-crypto": "^7.3.2",
-    "commander-ts": "^0.2.0",
-    "hash-wasm": "^4.11.0"
-  },
   "bin": {
-    "kreivo-sandbox": "./bin/kreivo-sandbox.ts"
+    "kreivo-sandbox": "bin/kreivo-sandbox.ts"
   },
   "scripts": {
     "kusama:kreivo-with-relay": "node --loader ts-node/esm kusama/kreivo-with-relay.ts",
@@ -17,9 +11,16 @@
     "kusama:kreivo-upgrade": "node --loader ts-node/esm kusama/kreivo-upgrade.ts",
     "util:community-sa": "node --loader ts-node/esm utils/construct-community-sa-in-kusama.ts"
   },
-  "devDependencies": {
-    "@tsconfig/node21": "^21.0.3",
+  "dependencies": {
+    "@acala-network/chopsticks": "^0.9.13",
+    "@polkadot/api": "^10.12.6",
+    "@polkadot/wasm-crypto": "^7.3.2",
+    "commander-ts": "^0.2.0",
+    "hash-wasm": "^4.11.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
+  },
+  "devDependencies": {
+    "@tsconfig/node21": "^21.0.3"
   }
 }
