@@ -1,12 +1,15 @@
 {
   "name": "@virto-network/kreivo-sandbox",
-  "private": true,
   "type": "module",
   "dependencies": {
     "@acala-network/chopsticks": "^0.9.13",
     "@polkadot/api": "^10.12.6",
     "@polkadot/wasm-crypto": "^7.3.2",
+    "commander-ts": "^0.2.0",
     "hash-wasm": "^4.11.0"
+  },
+  "bin": {
+    "kreivo-sandbox": "./bin/kreivo-sandbox.ts"
   },
   "scripts": {
     "kusama:kreivo-with-relay": "node --loader ts-node/esm kusama/kreivo-with-relay.ts",

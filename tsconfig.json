@@ -2,6 +2,8 @@
   "extends": "@tsconfig/node21/tsconfig.json",
   "compilerOptions": {
     "target": "ESNext",
-    "module": "NodeNext"
+    "module": "NodeNext",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
   }
 }
