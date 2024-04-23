@@ -1,4 +1,4 @@
-#!/usr/bin/env node  --loader ts-node/esm
+#! /usr/bin/env node
 
 import { description, option, program, version } from "commander-ts";
 import { ClientCreateOptions } from "../lib/create-options.js";
@@ -40,7 +40,8 @@ export class Program {
   @option(
     "-s, --with-siblings <siblingIds>",
     "Include a connection to sibling parachains (e.g. asset-hub)",
-    (chains: string) => chains.split(",")
+    (chains: string) => chains.split(","),
+    []
   )
   withSiblings: ChainId[] = [];
 
