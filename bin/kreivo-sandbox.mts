@@ -68,30 +68,30 @@ export class Program {
     await new SandboxClient(this._optionValues).initialize();
   }
 
-  @command()
-  async accountIds(@requiredArg("community-id") communityId: number) {
-    const kusamaApi = await ApiPromise.create({
-      provider: new WsProvider("wss://sys.ibp.network/kusama"),
-      types: {
-        HashedDescriptor: "Vec<u8>",
-        "FamilyDescriptor<Child>": "([u8; 10], Compact<u32>, Vec<u8>)",
-        BodyDescriptor: "([u8; 4], XcmV3JunctionBodyId, XcmV3JunctionBodyPart)",
-      },
-    });
+  // @command()
+  // async accountIds(@requiredArg("community-id") communityId: number) {
+  //   const kusamaApi = await ApiPromise.create({
+  //     provider: new WsProvider("wss://sys.ibp.network/kusama"),
+  //     types: {
+  //       HashedDescriptor: "Vec<u8>",
+  //       "FamilyDescriptor<Child>": "([u8; 10], Compact<u32>, Vec<u8>)",
+  //       BodyDescriptor: "([u8; 4], XcmV3JunctionBodyId, XcmV3JunctionBodyPart)",
+  //     },
+  //   });
 
-    const address = await sovereignAccountForCommunityInRelay(
-      kusamaApi,
-      communityId
-    );
-    console.log(
-      "AccountId for ./Parachain(2281)/Plurality { id: Index(%d), part: Voice }: %s",
-      communityId,
-      address
-    );
+  //   const address = await sovereignAccountForCommunityInRelay(
+  //     kusamaApi,
+  //     communityId
+  //   );
+  //   console.log(
+  //     "AccountId for ./Parachain(2281)/Plurality { id: Index(%d), part: Voice }: %s",
+  //     communityId,
+  //     address
+  //   );
 
-    await kusamaApi.disconnect();
-    process.exit(0);
-  }
+  //   await kusamaApi.disconnect();
+  //   process.exit(0);
+  // }
 }
 
 const p = new Program();
