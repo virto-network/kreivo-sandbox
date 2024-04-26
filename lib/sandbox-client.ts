@@ -20,7 +20,7 @@ import { Endpoint } from "./endpoints.js";
 export class SandboxClient {
   private kreivoClient: ChopsticksClient;
   private relayClient?: ChopsticksClient;
-  private siblingClients: ChopsticksClient[] = [];
+  private siblingClients: [ChopsticksClient, string | undefined][] = [];
 
   constructor(private createOptions: ClientCreateOptions) {
     this.kreivoClient = new ChopsticksClient(Endpoint.get("kreivo"));
@@ -30,7 +30,10 @@ export class SandboxClient {
     }
 
     for (const siblingId of createOptions.withSiblings) {
-      this.siblingClients.push(new ChopsticksClient(Endpoint.get(siblingId)));
+      this.siblingClients.push([
+        new ChopsticksClient(Endpoint.get(siblingId)),
+        this.createOptions.wasmOverrides?.[siblingId],
+      ]);
     }
   }
 
@@ -38,12 +41,14 @@ export class SandboxClient {
     await this.kreivoClient.initialize({
       withServer: true,
       runtimeLogLevel: this.createOptions.runtimeLogLevel,
+      runtimeWasmOverride: this.createOptions.wasmOverrides?.kreivo,
     });
 
     if (this.relayClient) {
       await this.relayClient.initialize({
         withServer: true,
         runtimeLogLevel: this.createOptions.runtimeLogLevel,
+        runtimeWasmOverride: this.createOptions.wasmOverrides?.relay,
       });
       await connectVertical(
         this.relayClient.blockchain,
@@ -52,16 +57,17 @@ export class SandboxClient {
     }
 
     if (this.siblingClients.length) {
-      for (const sibling of this.siblingClients) {
+      for (const [sibling, wasmOverride] of this.siblingClients) {
         await sibling.initialize({
           withServer: true,
           runtimeLogLevel: this.createOptions.runtimeLogLevel,
+          runtimeWasmOverride: wasmOverride,
         });
       }
 
       await connectParachains([
         this.kreivoClient.blockchain,
-        ...this.siblingClients.map((s) => s.blockchain),
+        ...this.siblingClients.map(([s]) => s.blockchain),
       ]);
     }
 

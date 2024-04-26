@@ -5,6 +5,7 @@ export type ClientCreateOptions = {
   withRelay: boolean;
   withUpgrade: boolean;
   upgradeWasmPath?: string;
+  wasmOverrides: Record<ChainId, string>;
   withSiblings: ChainId[];
   runtimeLogLevel: RuntimeLogLevel;
 };

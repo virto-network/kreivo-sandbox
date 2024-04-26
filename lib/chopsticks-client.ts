@@ -19,6 +19,7 @@ export enum RuntimeLogLevel {
 export type ClientInitializationOptions = {
   withServer?: boolean;
   runtimeLogLevel?: RuntimeLogLevel;
+  runtimeWasmOverride?: string;
 };
 
 export class ChopsticksClient {
@@ -31,6 +32,7 @@ export class ChopsticksClient {
   async initialize({
     withServer = false,
     runtimeLogLevel = RuntimeLogLevel.Info,
+    runtimeWasmOverride,
   }: ClientInitializationOptions = {}) {
     if (!withServer) {
       this.chain = await setup({
@@ -44,6 +46,7 @@ export class ChopsticksClient {
         endpoint: this.endpoint,
         port: 8000,
         "runtime-log-level": runtimeLogLevel,
+        "wasm-override": runtimeWasmOverride,
       });
 
       this.chain = chain;

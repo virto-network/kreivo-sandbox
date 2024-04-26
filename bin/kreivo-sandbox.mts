@@ -12,7 +12,7 @@ import { ClientCreateOptions } from "../lib/create-options.js";
 import { SandboxClient } from "../lib/sandbox-client.js";
 import { RuntimeLogLevel } from "../lib/chopsticks-client.js";
 import { resolve } from "node:path";
-import { ChainId } from "../lib/endpoints.js";
+import { ChainId, ChainIds } from "../lib/endpoints.js";
 
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { sovereignAccountForCommunityInRelay } from "../utils/community-account-ids.js";
@@ -28,6 +28,7 @@ export class Program {
     withUpgrade: false,
     withSiblings: [],
     runtimeLogLevel: RuntimeLogLevel.Info,
+    wasmOverrides: {} as unknown as Record<ChainId, string>,
   };
 
   @option(
@@ -46,6 +47,24 @@ export class Program {
     resolve(process.cwd(), "./kreivo_runtime.compact.compressed.wasm")
   )
   upgradeWasmPath?: string;
+
+  @option(
+    "-W, --wasm-overrides <chainId:path..., >",
+    "A list of chainId:path items that resolves how to override the WASM binary for a chain's runtime",
+    (resolves: string) =>
+      resolves
+        .split(",")
+        .map((x) => x.split(":") as [ChainId, string])
+        .reduce(
+          (resolves, [chainId, path]) => ({
+            [chainId]: resolve(process.cwd(), path),
+            ...resolves,
+          }),
+          {} as Record<ChainId, string>
+        ),
+    {}
+  )
+  wasmOverrides?: Record<ChainId, string>;
 
   @option(
     "-s, --with-siblings <siblingIds>",
