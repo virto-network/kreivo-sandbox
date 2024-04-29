@@ -63,6 +63,13 @@ export class SandboxClient {
           runtimeLogLevel: this.createOptions.runtimeLogLevel,
           runtimeWasmOverride: wasmOverride,
         });
+
+        if (this.relayClient) {
+          await connectVertical(
+            this.relayClient.blockchain,
+            sibling.blockchain
+          );
+        }
       }
 
       await connectParachains([
