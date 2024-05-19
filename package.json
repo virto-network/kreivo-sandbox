@@ -1,9 +1,10 @@
 {
   "name": "@virtonetwork/kreivo-sandbox",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "type": "module",
   "bin": {
-    "kreivo-sandbox": "dist/bin/kreivo-sandbox.mjs"
+    "kreivo-sandbox": "dist/bin/kreivo-sandbox.mjs",
+    "kreivo-sandbox-accountIds": "dist/bin/kreivo-sandbox-accountIds.mjs"
   },
   "scripts": {
     "cli": "node --loader ts-node/esm bin/kreivo-sandbox.mts",
@@ -18,6 +19,7 @@
     "@polkadot/api": "^10.12.6",
     "@polkadot/wasm-crypto": "^7.3.2",
     "commander-ts": "^0.2.0",
+    "console-table-printer": "^2.12.0",
     "hash-wasm": "^4.11.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.3"
