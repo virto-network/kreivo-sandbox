@@ -60,7 +60,7 @@ export class Program {
 
   @option(
     "-s, --with-siblings <siblingIds>",
-    "Include a connection to sibling parachains (e.g. asset-hub)",
+    "Include a connection to sibling parachains (assetHub, encointer, bridgeHub, coretime, people). Input the chains as a comma-separated list.",
     (chains: string) =>
       chains === "all"
         ? ([
