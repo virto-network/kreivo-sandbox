@@ -82,8 +82,6 @@ export class Program {
   runtimeLogLevel: RuntimeLogLevel = RuntimeLogLevel.Info;
 
   async run() {
-    console.log(this);
-
     await new SandboxClient(this._optionValues).initialize();
   }
 
