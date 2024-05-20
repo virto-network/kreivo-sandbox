@@ -1,21 +1,13 @@
 #! /usr/bin/env node
 
-import {
-  requiredArg,
-  command,
-  description,
-  option,
-  program,
-  version,
-} from "commander-ts";
+import { description, option, program, version } from "commander-ts";
 import { ClientCreateOptions } from "../lib/create-options.js";
 import { SandboxClient } from "../lib/sandbox-client.js";
 import { RuntimeLogLevel } from "../lib/chopsticks-client.js";
 import { resolve } from "node:path";
-import { ChainId, ChainIds } from "../lib/endpoints.js";
+import { ChainId } from "../lib/endpoints.js";
 
-import { ApiPromise, WsProvider } from "@polkadot/api";
-import { sovereignAccountForCommunityInRelay } from "../utils/community-account-ids.js";
+import { printTable } from "console-table-printer";
 
 @program()
 @version("1.0.0")
@@ -69,7 +61,16 @@ export class Program {
   @option(
     "-s, --with-siblings <siblingIds>",
     "Include a connection to sibling parachains (e.g. asset-hub)",
-    (chains: string) => chains.split(","),
+    (chains: string) =>
+      chains === "all"
+        ? ([
+            "assetHub",
+            "encointer",
+            "bridgeHub",
+            "coretime",
+            "people",
+          ] as ChainId[])
+        : chains.split(","),
     []
   )
   withSiblings: ChainId[] = [];
@@ -82,33 +83,25 @@ export class Program {
   runtimeLogLevel: RuntimeLogLevel = RuntimeLogLevel.Info;
 
   async run() {
-    await new SandboxClient(this._optionValues).initialize();
+    const sandbox = new SandboxClient(this._optionValues);
+
+    await sandbox.initialize();
+
+    printTable(
+      await Promise.all(
+        sandbox.chains.map(async ({ id, client }) => ({
+          name: await client.blockchain.api.getSystemChain(),
+          version: (
+            await client.blockchain.head.runtimeVersion
+          ).specVersion.toLocaleString(undefined, { style: "decimal" }),
+          port: 10_000 + id,
+          block: client.blockchain.head.number.toLocaleString(undefined, {
+            style: "decimal",
+          }),
+        }))
+      )
+    );
   }
-
-  // @command()
-  // async accountIds(@requiredArg("community-id") communityId: number) {
-  //   const kusamaApi = await ApiPromise.create({
-  //     provider: new WsProvider("wss://sys.ibp.network/kusama"),
-  //     types: {
-  //       HashedDescriptor: "Vec<u8>",
-  //       "FamilyDescriptor<Child>": "([u8; 10], Compact<u32>, Vec<u8>)",
-  //       BodyDescriptor: "([u8; 4], XcmV3JunctionBodyId, XcmV3JunctionBodyPart)",
-  //     },
-  //   });
-
-  //   const address = await sovereignAccountForCommunityInRelay(
-  //     kusamaApi,
-  //     communityId
-  //   );
-  //   console.log(
-  //     "AccountId for ./Parachain(2281)/Plurality { id: Index(%d), part: Voice }: %s",
-  //     communityId,
-  //     address
-  //   );
-
-  //   await kusamaApi.disconnect();
-  //   process.exit(0);
-  // }
 }
 
 const p = new Program();

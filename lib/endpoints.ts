@@ -1,15 +1,23 @@
 export enum ChainIds {
-  assetHub,
   relay,
-  kreivo,
+  assetHub = 1000,
+  encointer = 1001,
+  bridgeHub = 1002,
+  coretime = 1003,
+  people = 1004,
+  kreivo = 2281,
 }
 
 export type ChainId = keyof typeof ChainIds;
 
 export class Endpoint {
   static endpoints: Record<ChainId, string> = {
-    assetHub: process.env.ASSET_HUB_ENDPOINT  || "wss://sys.ibp.network/statemine",
     relay: process.env.KUSAMA_ENDPOINT || "wss://sys.ibp.network/kusama",
+    assetHub: process.env.ASSET_HUB_ENDPOINT  || "wss://sys.ibp.network/statemine",
+    encointer: process.env.ENCOINTER_ENDPOINT || "wss://sys.ibp.network/encointer-kusama",
+    bridgeHub: process.env.BRIDGE_HUB || "wss://sys.ibp.network/bridgehub-kusama",
+    coretime: process.env.CORETIME_ENDPOINT || "wss://sys.ibp.network/coretime-kusama",
+    people: process.env.PEOPLE_ENDPOINT || "wss://kusama-people-rpc.polkadot.io",
     kreivo: process.env.KREIVO_ENDPOINT || "wss://kreivo.io",
   };
 

@@ -10,17 +10,18 @@ import {
   ChopsticksProvider,
   setStorage,
   StorageValues,
+  ChainProperties,
 } from "@acala-network/chopsticks";
 import { blake2b } from "hash-wasm";
 
 import { ChopsticksClient } from "./chopsticks-client.js";
 import { ClientCreateOptions } from "./create-options.js";
-import { Endpoint } from "./endpoints.js";
+import { ChainId, ChainIds, Endpoint } from "./endpoints.js";
 
 export class SandboxClient {
   private kreivoClient: ChopsticksClient;
   private relayClient?: ChopsticksClient;
-  private siblingClients: [ChopsticksClient, string | undefined][] = [];
+  private siblingChains: [ChainId, ChopsticksClient, string | undefined][] = [];
 
   constructor(private createOptions: ClientCreateOptions) {
     this.kreivoClient = new ChopsticksClient(Endpoint.get("kreivo"));
@@ -30,23 +31,28 @@ export class SandboxClient {
     }
 
     for (const siblingId of createOptions.withSiblings) {
-      this.siblingClients.push([
+      this.siblingChains.push([
+        siblingId,
         new ChopsticksClient(Endpoint.get(siblingId)),
         this.createOptions.wasmOverrides?.[siblingId],
       ]);
     }
   }
 
+  private getPort(chainId: ChainId) {
+    return 10_000 + ChainIds[chainId];
+  }
+
   async initialize() {
     await this.kreivoClient.initialize({
-      withServer: true,
+      port: this.getPort("kreivo"),
       runtimeLogLevel: this.createOptions.runtimeLogLevel,
       runtimeWasmOverride: this.createOptions.wasmOverrides?.kreivo,
     });
 
     if (this.relayClient) {
       await this.relayClient.initialize({
-        withServer: true,
+        port: this.getPort("relay"),
         runtimeLogLevel: this.createOptions.runtimeLogLevel,
         runtimeWasmOverride: this.createOptions.wasmOverrides?.relay,
       });
@@ -56,10 +62,10 @@ export class SandboxClient {
       );
     }
 
-    if (this.siblingClients.length) {
-      for (const [sibling, wasmOverride] of this.siblingClients) {
+    if (this.siblingChains.length) {
+      for (const [siblingId, sibling, wasmOverride] of this.siblingChains) {
         await sibling.initialize({
-          withServer: true,
+          port: this.getPort(siblingId),
           runtimeLogLevel: this.createOptions.runtimeLogLevel,
           runtimeWasmOverride: wasmOverride,
         });
@@ -74,13 +80,37 @@ export class SandboxClient {
 
       await connectParachains([
         this.kreivoClient.blockchain,
-        ...this.siblingClients.map(([s]) => s.blockchain),
+        ...this.siblingChains.map(([, s]) => s.blockchain),
       ]);
     }
 
     if (this.createOptions.withUpgrade) {
       await this.runUpgrade();
     }
+  }
+
+  get chains(): { name: ChainId; id: number; client: ChopsticksClient }[] {
+    return [
+      ...(this.relayClient
+        ? [
+            {
+              id: ChainIds.relay,
+              name: "relay" as ChainId,
+              client: this.relayClient,
+            },
+          ]
+        : []),
+      {
+        id: ChainIds.kreivo,
+        name: "kreivo" as ChainId,
+        client: this.kreivoClient,
+      },
+      ...this.siblingChains.map(([name, client]) => ({
+        id: ChainIds[name],
+        name,
+        client,
+      })),
+    ];
   }
 
   async runUpgrade() {
