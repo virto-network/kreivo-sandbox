@@ -6,6 +6,7 @@ import {
   option,
   program,
   version,
+  command,
 } from "commander-ts";
 import { RuntimeLogLevel } from "../lib/chopsticks-client.js";
 
@@ -14,6 +15,7 @@ import {
   sovereignAccountForCommunityInRelay,
   sovereignAccountForCommunityInSibling,
 } from "../utils/community-account-ids.js";
+import { printTable } from "console-table-printer";
 
 @program()
 @version("1.0.0")
@@ -26,7 +28,10 @@ export class Program {
   )
   runtimeLogLevel: RuntimeLogLevel = RuntimeLogLevel.Info;
 
-  async run(@requiredArg("community-id") communityId: number) {
+  run() {}
+
+  @command()
+  async accountIds(@requiredArg("community-id") communityId: number) {
     const kusamaApi = await ApiPromise.create({
       provider: new WsProvider("wss://sys.ibp.network/kusama"),
     });
@@ -39,16 +44,18 @@ export class Program {
       kusamaApi,
       communityId
     );
-    console.log(
-      "AccountId for ./Parachain(2281)/Plurality { id: Index(%d), part: Voice }: %s",
-      communityId,
-      childAddress
-    );
-    console.log(
-      "AccountId for ../Parachain(2281)/Plurality { id: Index(%d), part: Voice }: %s",
-      communityId,
-      siblingAddress
-    );
+
+    console.log("Addresses for CommunityId %d", communityId);
+    printTable([
+      {
+        Location: `./Parachain(2281)/Plurality { id: Index(${communityId}), part: Voice }`,
+        Address: childAddress,
+      },
+      {
+        Location: `../Parachain(2281)/Plurality { id: Index(${communityId}), part: Voice }`,
+        Address: siblingAddress,
+      },
+    ]);
 
     await kusamaApi.disconnect();
     process.exit(0);

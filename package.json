@@ -4,10 +4,11 @@
   "type": "module",
   "bin": {
     "kreivo-sandbox": "dist/bin/kreivo-sandbox.mjs",
-    "kreivo-sandbox-accountIds": "dist/bin/kreivo-sandbox-accountIds.mjs"
+    "kreivo-sandbox-utils": "dist/bin/kreivo-sandbox-utils.mjs"
   },
   "scripts": {
     "cli": "node --loader ts-node/esm bin/kreivo-sandbox.mts",
+    "utils": "node --loader ts-node/esm bin/kreivo-sandbox-utils.mts",
     "prepack": "tsc",
     "kusama:kreivo-with-relay": "node --loader ts-node/esm kusama/kreivo-with-relay.ts",
     "kusama:kreivo-ah": "node --loader ts-node/esm kusama/kreivo-ah.ts",
