@@ -8,7 +8,23 @@ function registerTypes(api: ApiPromise) {
     "FamilyDescriptor<Child>": "([u8; 10], Compact<u32>, Vec<u8>)",
     "FamilyDescriptor<Sibling>": "([u8; 12], Compact<u32>, Vec<u8>)",
     BodyDescriptor: "([u8; 4], XcmV3JunctionBodyId, XcmV3JunctionBodyPart)",
+    CommunityAccount: "([u8; 12], u16, [u8; 18])",
   });
+}
+
+export async function communityAccountInKreivo(
+  api: ApiPromise,
+  communityId: number
+) {
+  registerTypes(api);
+
+  const address = api.createType("CommunityAccount", [
+    "modlkv/cmtys",
+    communityId,
+    Array(18).fill(0),
+  ]);
+
+  return encodeAddress(address.toU8a(), 2);
 }
 
 export async function sovereignAccountForCommunityInRelay(

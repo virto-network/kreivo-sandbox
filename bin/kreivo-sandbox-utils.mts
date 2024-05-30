@@ -12,6 +12,7 @@ import { RuntimeLogLevel } from "../lib/chopsticks-client.js";
 
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import {
+  communityAccountInKreivo,
   sovereignAccountForCommunityInRelay,
   sovereignAccountForCommunityInSibling,
 } from "../utils/community-account-ids.js";
@@ -36,29 +37,41 @@ export class Program {
       provider: new WsProvider("wss://sys.ibp.network/kusama"),
     });
 
-    const childAddress = await sovereignAccountForCommunityInRelay(
-      kusamaApi,
-      communityId
-    );
-    const siblingAddress = await sovereignAccountForCommunityInSibling(
-      kusamaApi,
-      communityId
-    );
+    try {
+      const kreivoAddress = await communityAccountInKreivo(
+        kusamaApi,
+        communityId
+      );
+      const childAddress = await sovereignAccountForCommunityInRelay(
+        kusamaApi,
+        communityId
+      );
+      const siblingAddress = await sovereignAccountForCommunityInSibling(
+        kusamaApi,
+        communityId
+      );
 
-    console.log("Addresses for CommunityId %d", communityId);
-    printTable([
-      {
-        Location: `./Parachain(2281)/Plurality { id: Index(${communityId}), part: Voice }`,
-        Address: childAddress,
-      },
-      {
-        Location: `../Parachain(2281)/Plurality { id: Index(${communityId}), part: Voice }`,
-        Address: siblingAddress,
-      },
-    ]);
-
-    await kusamaApi.disconnect();
-    process.exit(0);
+      console.log("Addresses for CommunityId %d", communityId);
+      printTable([
+        {
+          Location: `./Plurality { id: Index(${communityId}), part: Voice }`,
+          Address: kreivoAddress,
+        },
+        {
+          Location: `./Parachain(2281)/Plurality { id: Index(${communityId}), part: Voice }`,
+          Address: childAddress,
+        },
+        {
+          Location: `../Parachain(2281)/Plurality { id: Index(${communityId}), part: Voice }`,
+          Address: siblingAddress,
+        },
+      ]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      await kusamaApi.disconnect();
+      process.exit(0);
+    }
   }
 }
 
