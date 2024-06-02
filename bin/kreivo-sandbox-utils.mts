@@ -34,7 +34,7 @@ export class Program {
   @command()
   async accountIds(@requiredArg("community-id") communityId: number) {
     const kusamaApi = await ApiPromise.create({
-      provider: new WsProvider("wss://sys.ibp.network/kusama"),
+      provider: new WsProvider("wss://rpc.ibp.network/kusama"),
     });
 
     try {

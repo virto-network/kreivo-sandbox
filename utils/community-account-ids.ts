@@ -12,9 +12,20 @@ function registerTypes(api: ApiPromise) {
   });
 }
 
+export function communityAccountInKreivo(
+  api: ApiPromise,
+  communityId: number,
+  format?: "ss58"
+): Promise<string>;
+export function communityAccountInKreivo(
+  api: ApiPromise,
+  communityId: number,
+  format?: "u8a"
+): Promise<Uint8Array>;
 export async function communityAccountInKreivo(
   api: ApiPromise,
-  communityId: number
+  communityId: number,
+  format: "ss58" | "u8a" = "ss58"
 ) {
   registerTypes(api);
 
@@ -24,12 +35,28 @@ export async function communityAccountInKreivo(
     Array(18).fill(0),
   ]);
 
-  return encodeAddress(address.toU8a(), 2);
+  switch (format) {
+    case "ss58":
+      return encodeAddress(address.toU8a(), 2);
+    case "u8a":
+      return address.toU8a();
+  }
 }
 
+export function sovereignAccountForCommunityInRelay(
+  api: ApiPromise,
+  communityId: number,
+  format?: "ss58"
+): Promise<string>;
+export function sovereignAccountForCommunityInRelay(
+  api: ApiPromise,
+  communityId: number,
+  format?: "u8a"
+): Promise<Uint8Array>;
 export async function sovereignAccountForCommunityInRelay(
   api: ApiPromise,
-  communityId: number
+  communityId: number,
+  format: "ss58" | "u8a" = "ss58"
 ) {
   registerTypes(api);
 
@@ -54,12 +81,29 @@ export async function sovereignAccountForCommunityInRelay(
   let hasher = await createBLAKE2b(256);
   hasher.update(family.toU8a());
 
-  return encodeAddress(hasher.digest("binary"), 2);
+  const hash = hasher.digest("binary");
+  switch (format) {
+    case "ss58":
+      return encodeAddress(hash, 2);
+    case "u8a":
+      return hash;
+  }
 }
 
+export function sovereignAccountForCommunityInSibling(
+  api: ApiPromise,
+  communityId: number,
+  format?: "ss58"
+): Promise<string>;
+export function sovereignAccountForCommunityInSibling(
+  api: ApiPromise,
+  communityId: number,
+  format?: "u8a"
+): Promise<Uint8Array>;
 export async function sovereignAccountForCommunityInSibling(
   api: ApiPromise,
-  communityId: number
+  communityId: number,
+  format: "ss58" | "u8a" = "ss58"
 ) {
   registerTypes(api);
 
@@ -84,5 +128,11 @@ export async function sovereignAccountForCommunityInSibling(
   let hasher = await createBLAKE2b(256);
   hasher.update(family.toU8a());
 
-  return encodeAddress(hasher.digest("binary"), 2);
+  const hash = hasher.digest("binary");
+  switch (format) {
+    case "ss58":
+      return encodeAddress(hash, 2);
+    case "u8a":
+      return hash;
+  }
 }
