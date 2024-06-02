@@ -13,9 +13,6 @@ const peopleApi = await ApiPromise.create({
   provider: new WsProvider("ws://localhost:12281"),
 });
 
-const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
-const ALICE = keyring.addFromUri("//Alice");
-
 async function topupThenCreateCommunity(
   signer: KeyringPair,
   communityId: number,
@@ -208,6 +205,9 @@ async function topupThenCreateCommunity(
 
   return transferAssetsExecution;
 }
+
+const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
+const ALICE = keyring.addFromUri("//Alice");
 
 const tx = await topupThenCreateCommunity(
   ALICE,
