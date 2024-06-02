@@ -12,7 +12,7 @@ export type ChainId = keyof typeof ChainIds;
 
 export class Endpoint {
   static endpoints: Record<ChainId, string> = {
-    relay: process.env.KUSAMA_ENDPOINT || "wss://sys.ibp.network/kusama",
+    relay: process.env.KUSAMA_ENDPOINT || "wss://rpc.ibp.network/kusama",
     assetHub:
       process.env.ASSET_HUB_ENDPOINT || "wss://sys.ibp.network/statemine",
     encointer:
@@ -23,8 +23,8 @@ export class Endpoint {
     coretime:
       process.env.CORETIME_ENDPOINT || "wss://sys.ibp.network/coretime-kusama",
     people:
-      process.env.PEOPLE_ENDPOINT || "wss://kusama-people-rpc.polkadot.io",
-    kreivo: process.env.KREIVO_ENDPOINT || "wss://kreivo.io",
+      process.env.PEOPLE_ENDPOINT || "wss://sys.ibp.network/people-kusama",
+    kreivo: process.env.KREIVO_ENDPOINT || "wss://kreivo.kippu.rocks",
   };
 
   static get(chainId: ChainId) {
