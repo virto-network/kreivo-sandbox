@@ -1,17 +1,10 @@
 import "@polkadot/api-augment/kusama";
-import { WsProvider, ApiPromise, Keyring } from "@polkadot/api";
-import type { KeyringPair } from "@polkadot/keyring/types";
-import { sovereignAccountForCommunityInSibling } from "../utils/community-account-ids.js";
-
-const kusamaApi = await ApiPromise.create({
-  provider: new WsProvider("ws://localhost:10000"),
-});
-const kreivoApi = await ApiPromise.create({
-  provider: new WsProvider("ws://localhost:11004"),
-});
-const peopleApi = await ApiPromise.create({
-  provider: new WsProvider("ws://localhost:12281"),
-});
+import { WsProvider, ApiPromise } from "@polkadot/api";
+import {
+  communityAccountInKreivo,
+  sovereignAccountForCommunityInRelay,
+  sovereignAccountForCommunityInSibling,
+} from "../utils/community-account-ids.js";
 
 async function topupThenCreateCommunity(
   signer: KeyringPair,
@@ -21,10 +14,10 @@ async function topupThenCreateCommunity(
         type: "Membership";
       }
     | {
-        type: "Ranked";
+        type: "Rank";
       }
     | {
-        type: "Native";
+        type: "NativeToken";
       }
     | {
         type: "CommunityAsset";
@@ -37,6 +30,15 @@ async function topupThenCreateCommunity(
     image?: string;
   }
 ) {
+  const kusamaApi = await ApiPromise.create({
+    provider: new WsProvider("ws://localhost:10000"),
+  });
+  const kreivoApi = await ApiPromise.create({
+    provider: new WsProvider("ws://localhost:12281"),
+  });
+  const peopleApi = await ApiPromise.create({
+    provider: new WsProvider("ws://localhost:11004"),
+  });
   // Part 1: Transfer assets
 
   // 1a. Transfers 0.51KSM (because fees) to Kreivo
@@ -195,6 +197,29 @@ async function topupThenCreateCommunity(
         },
         transferToKreivo,
         teleportToPeople,
+        {
+          RefundSurplus: null,
+        },
+        {
+          DepositAsset: {
+            assets: {
+              Wild: "All",
+            },
+            beneficiary: {
+              parents: 0,
+              interior: kusamaApi.createType("StagingXcmV4Junctions", {
+                X1: [
+                  kusamaApi.createType("StagingXcmV4Junction", {
+                    AccountId32: {
+                      network: null,
+                      id: signer.addressRaw,
+                    },
+                  }),
+                ],
+              }),
+            },
+          },
+        },
       ],
     },
     {
@@ -203,8 +228,160 @@ async function topupThenCreateCommunity(
     }
   );
 
-  return transferAssetsExecution;
+  let encodedDecisionMethod: unknown = {
+    Membership: null,
+  };
+  switch (decisionMethod.type) {
+    case "Rank":
+      encodedDecisionMethod = {
+        Rank: null,
+      };
+      break;
+    case "NativeToken":
+      encodedDecisionMethod = {
+        NativeToken: null,
+      };
+      break;
+    case "CommunityAsset":
+      encodedDecisionMethod = {
+        CommunityAsset: [decisionMethod.id, decisionMethod.minVote],
+      };
+      break;
+  }
+
+  // Part 2: Create Community, then set identities
+  const createCommunity = kreivoApi.tx.communitiesManager.register(
+    communityId,
+    identity.name,
+    {
+      Id: signer.address,
+    },
+    encodedDecisionMethod,
+    null
+  );
+
+  const createCommunityDispatchInfo =
+    await kreivoApi.call.transactionPaymentCallApi.queryCallInfo(
+      createCommunity.method,
+      createCommunity.method.toU8a().length
+    );
+
+  const createCommunityTransact = kusamaApi.createType(
+    "StagingXcmV4Instruction",
+    {
+      Transact: {
+        originKind: "SovereignAccount",
+        requireWeightAtMost: createCommunityDispatchInfo.weight,
+        call: {
+          encoded: createCommunity.method.toHex(),
+        },
+      },
+    }
+  );
+
+  const setIdentities = peopleApi.tx.utility.batchAll([
+    peopleApi.tx.identity.setIdentity({
+      display: {
+        Raw: identity.name,
+      },
+      image: identity.image ? { Raw: identity.image } : null,
+    }),
+    peopleApi.tx.identity.addSub(
+      {
+        Id: await sovereignAccountForCommunityInRelay(kusamaApi, communityId),
+      },
+      { Raw: "Sovereign Account in Kusama" }
+    ),
+    peopleApi.tx.identity.addSub(
+      {
+        Id: await communityAccountInKreivo(kusamaApi, communityId),
+      },
+      { Raw: "Local Account in Kreivo" }
+    ),
+  ]);
+
+  const createCommunitySend = kusamaApi.tx.xcmPallet.send(
+    {
+      V4: {
+        parents: 0,
+        interior: {
+          X1: [{ Parachain: 2281 }],
+        },
+      },
+    },
+    {
+      V4: [
+        {
+          WithdrawAsset: [
+            {
+              id: {
+                parents: 1,
+                interior: "Here",
+              },
+              fun: {
+                Fungible: 9e9,
+              },
+            },
+          ],
+        },
+        {
+          BuyExecution: {
+            fees: {
+              id: {
+                parents: 1,
+                interior: "Here",
+              },
+              fun: {
+                Fungible: 9e9,
+              },
+            },
+            weightLimit: "Unlimited",
+          },
+        },
+        createCommunityTransact,
+        {
+          ExpectTransactStatus: {
+            Success: null,
+          },
+        },
+        {
+          RefundSurplus: null,
+        },
+        {
+          DepositAsset: {
+            assets: {
+              Wild: "All",
+            },
+            beneficiary: {
+              parents: 0,
+              interior: kusamaApi.createType("StagingXcmV4Junctions", {
+                X1: [
+                  kusamaApi.createType("StagingXcmV4Junction", {
+                    AccountId32: {
+                      network: null,
+                      id: signer.addressRaw,
+                    },
+                  }),
+                ],
+              }),
+            },
+          },
+        },
+      ],
+    }
+  );
+
+  return kusamaApi.tx.utility.batch([
+    transferAssetsExecution,
+    createCommunitySend,
+  ]);
 }
+
+import { Keyring } from "@polkadot/api";
+import { waitReady } from "@polkadot/wasm-crypto";
+import type { KeyringPair } from "@polkadot/keyring/types";
+
+await waitReady();
 
 const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
 const ALICE = keyring.addFromUri("//Alice");
