@@ -1,10 +1,20 @@
 {
-  "extends": "@tsconfig/node21/tsconfig.json",
   "compilerOptions": {
+    "module": "ESNext",
+    "lib": [
+      "ESNext",
+      "dom"
+    ],
     "target": "ESNext",
-    "module": "NodeNext",
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "outDir": "dist"
-  }
+    "moduleResolution": "Bundler",
+    "skipLibCheck": true,
+    "typeRoots": [
+      "node_modules/@types",
+      "src/typings"
+    ],
+    "outDir": "./build"
+  },
+  "include": [
+    "**/*.ts"
+  ]
 }

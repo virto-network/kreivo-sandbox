@@ -17,15 +17,20 @@
   },
   "dependencies": {
     "@acala-network/chopsticks": "^0.11.0",
-    "@polkadot/api": "^10.13.1",
+    "@polkadot/api": "^11.2.1",
+    "@polkadot/extension-dapp": "^0.47.5",
+    "@polkadot/keyring": "^12.6.2",
     "@polkadot/wasm-crypto": "^7.3.2",
     "commander-ts": "^0.2.0",
     "console-table-printer": "^2.12.0",
     "hash-wasm": "^4.11.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.3"
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
-    "@tsconfig/node21": "^21.0.3"
+    "@tsconfig/node21": "^21.0.3",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.4.5",
+    "webpack": "^5.91.0",
+    "webpack-cli": "^5.1.4"
   }
 }

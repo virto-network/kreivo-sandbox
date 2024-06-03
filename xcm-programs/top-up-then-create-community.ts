@@ -4,32 +4,39 @@ import {
   communityAccountInKreivo,
   sovereignAccountForCommunityInRelay,
   sovereignAccountForCommunityInSibling,
-} from "../utils/community-account-ids.js";
+} from "../utils/community-account-ids";
+
+import { decodeAddress } from '@polkadot/util-crypto';
+import { web3Accounts, web3Enable, web3FromAddress } from '@polkadot/extension-dapp';
 
 async function topupThenCreateCommunity(
-  signer: KeyringPair,
+  from: string,
+  app: string,
   communityId: number,
   decisionMethod:
     | {
-        type: "Membership";
-      }
+      type: "Membership";
+    }
     | {
-        type: "Rank";
-      }
+      type: "Rank";
+    }
     | {
-        type: "NativeToken";
-      }
+      type: "NativeToken";
+    }
     | {
-        type: "CommunityAsset";
-        id: any;
-        minVote: number;
-      },
+      type: "CommunityAsset";
+      id: any;
+      minVote: number;
+    },
   identity: {
     name: string;
     description?: string;
     image?: string;
   }
 ) {
+  const allInjected = await web3Enable(app);
+  const injector = await web3FromAddress(from);
+
   const kusamaApi = await ApiPromise.create({
     provider: new WsProvider("ws://localhost:10000"),
   });
@@ -88,7 +95,7 @@ async function topupThenCreateCommunity(
                   kusamaApi.createType("StagingXcmV4Junction", {
                     AccountId32: {
                       network: null,
-                      id: signer.addressRaw,
+                      id: decodeAddress(from),
                     },
                   }),
                 ],
@@ -212,7 +219,7 @@ async function topupThenCreateCommunity(
                   kusamaApi.createType("StagingXcmV4Junction", {
                     AccountId32: {
                       network: null,
-                      id: signer.addressRaw,
+                      id: decodeAddress(from),
                     },
                   }),
                 ],
@@ -254,7 +261,7 @@ async function topupThenCreateCommunity(
     communityId,
     identity.name,
     {
-      Id: signer.address,
+      Id: decodeAddress(from),
     },
     encodedDecisionMethod,
     null
@@ -266,11 +273,15 @@ async function topupThenCreateCommunity(
       createCommunity.method.toU8a().length
     );
 
+  // @ts-ignore
+  console.log("there is a weight: ", createCommunityDispatchInfo.weight);
+  
   const createCommunityTransact = kusamaApi.createType(
     "StagingXcmV4Instruction",
     {
       Transact: {
         originKind: "SovereignAccount",
+        // @ts-ignore
         requireWeightAtMost: createCommunityDispatchInfo.weight,
         call: {
           encoded: createCommunity.method.toHex(),
@@ -359,7 +370,7 @@ async function topupThenCreateCommunity(
                   kusamaApi.createType("StagingXcmV4Junction", {
                     AccountId32: {
                       network: null,
-                      id: signer.addressRaw,
+                      id: decodeAddress(from),
                     },
                   }),
                 ],
@@ -374,27 +385,5 @@ async function topupThenCreateCommunity(
   return kusamaApi.tx.utility.batch([
     transferAssetsExecution,
     createCommunitySend,
-  ]);
+  ]).signAndSend(from, { signer: injector.signer }, () => console.log("sign"));
 }
-
-import { Keyring } from "@polkadot/api";
-import { waitReady } from "@polkadot/wasm-crypto";
-import type { KeyringPair } from "@polkadot/keyring/types";
-
-await waitReady();
-
-const keyring = new Keyring({ ss58Format: 2, type: "sr25519" });
-const ALICE = keyring.addFromUri("//Alice");
-
-const tx = await topupThenCreateCommunity(
-  ALICE,
-  20,
-  { type: "Membership" },
-  {
-    name: "Cubo",
-  }
-);
-
-await tx.signAndSend(ALICE);
-
-process.exit(0);
