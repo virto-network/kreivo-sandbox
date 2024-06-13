@@ -23,7 +23,7 @@ export type ClientInitializationOptions = {
 };
 
 export class ChopsticksClient {
-  constructor(private endpoint: string) {}
+  constructor(private endpoint: string | string[]) {}
 
   private chain?: Blockchain;
   private provider?: ChopsticksProvider;

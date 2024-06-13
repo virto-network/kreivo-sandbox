@@ -1,6 +1,6 @@
 {
   "name": "@virtonetwork/kreivo-sandbox",
-  "version": "1.0.16",
+  "version": "1.0.17",
   "type": "module",
   "bin": {
     "kreivo-sandbox": "dist/bin/kreivo-sandbox.mjs",
@@ -16,8 +16,8 @@
     "util:community-sa": "node --loader ts-node/esm utils/construct-community-sa-in-kusama.ts"
   },
   "dependencies": {
-    "@acala-network/chopsticks": "^0.11.0",
-    "@polkadot/api": "^10.13.1",
+    "@acala-network/chopsticks": "^0.12.2",
+    "@polkadot/api": "^11.2.1",
     "@polkadot/wasm-crypto": "^7.3.2",
     "commander-ts": "^0.2.0",
     "console-table-printer": "^2.12.0",
