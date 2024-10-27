@@ -1,7 +1,9 @@
+import { ChainId, Network } from "./network.js";
+
 import { RuntimeLogLevel } from "./chopsticks-client.js";
-import { ChainId } from "./endpoints.js";
 
 export type ClientCreateOptions = {
+  network: Network;
   withRelay: boolean;
   withUpgrade: boolean;
   upgradeWasmPath?: string;

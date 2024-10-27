@@ -1,7 +1,6 @@
 import { ApiPromise, Keyring } from "@polkadot/api";
-import { ChainId, ChainIds, Endpoint } from "./endpoints.js";
+import { ChainId, ChainIds, Network } from "./network.js";
 import {
-  ChainProperties,
   ChopsticksProvider,
   StorageValues,
   connectParachains,
@@ -18,21 +17,27 @@ import { u8aToHex } from "@polkadot/util";
 import { waitReady } from "@polkadot/wasm-crypto";
 
 export class SandboxClient {
+  private network: Network;
   private kreivoClient: ChopsticksClient;
   private relayClient?: ChopsticksClient;
   private siblingChains: [ChainId, ChopsticksClient, string | undefined][] = [];
 
   constructor(private createOptions: ClientCreateOptions) {
-    this.kreivoClient = new ChopsticksClient(Endpoint.get("kreivo"));
+    this.network = createOptions.network;
+    this.kreivoClient = new ChopsticksClient(
+      this.network.getEndpoint("kreivo")
+    );
 
     if (createOptions.withRelay) {
-      this.relayClient = new ChopsticksClient(Endpoint.get("relay"));
+      this.relayClient = new ChopsticksClient(
+        this.network.getEndpoint("relay")
+      );
     }
 
     for (const siblingId of createOptions.withSiblings) {
       this.siblingChains.push([
         siblingId,
-        new ChopsticksClient(Endpoint.get(siblingId)),
+        new ChopsticksClient(this.network.getEndpoint(siblingId)),
         this.createOptions.wasmOverrides?.[siblingId],
       ]);
     }

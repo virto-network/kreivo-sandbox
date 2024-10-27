@@ -1,17 +1,11 @@
-export enum ChainIds {
-  relay,
-  assetHub = 1000,
-  encointer = 1001,
-  bridgeHub = 1002,
-  coretime = 1003,
-  people = 1004,
-  kreivo = 2281,
-}
+import { ChainId, Network } from "../network.js";
 
-export type ChainId = keyof typeof ChainIds;
-
-export class Endpoint {
+export class KusamaNetwork implements Network {
   static endpoints: Record<ChainId, string | string[]> = {
+    kreivo: process.env.KREIVO_ENDPOINT || [
+      "wss://kreivo.kippu.rocks",
+      "wss://kreivo.io",
+    ],
     relay: process.env.KUSAMA_ENDPOINT || [
       "wss://kusama-rpc.dwellir.com",
       "wss://rpc.ibp.network/kusama",
@@ -19,10 +13,6 @@ export class Endpoint {
     assetHub: process.env.ASSET_HUB_ENDPOINT || [
       "wss://asset-hub-kusama-rpc.dwellir.com",
       "wss://sys.ibp.network/statemine",
-    ],
-    encointer: process.env.ENCOINTER_ENDPOINT || [
-      "wss://encointer-kusama-rpc.dwellir.com",
-      "wss://sys.ibp.network/encointer-kusama",
     ],
     bridgeHub: process.env.BRIDGE_HUB || [
       "wss://bridge-hub-kusama-rpc.dwellir.com",
@@ -36,13 +26,13 @@ export class Endpoint {
       "wss://people-kusama-rpc.dwellir.com",
       "wss://sys.ibp.network/people-kusama",
     ],
-    kreivo: process.env.KREIVO_ENDPOINT || [
-      "wss://kreivo.kippu.rocks",
-      "wss://kreivo.io",
+    encointer: process.env.ENCOINTER_ENDPOINT || [
+      "wss://encointer-kusama-rpc.dwellir.com",
+      "wss://sys.ibp.network/encointer-kusama",
     ],
   };
 
-  static get(chainId: ChainId) {
-    return this.endpoints[chainId];
+  getEndpoint(chainId: ChainId) {
+    return KusamaNetwork.endpoints[chainId];
   }
 }

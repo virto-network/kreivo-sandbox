@@ -5,9 +5,11 @@ import { ClientCreateOptions } from "../lib/create-options.js";
 import { SandboxClient } from "../lib/sandbox-client.js";
 import { RuntimeLogLevel } from "../lib/chopsticks-client.js";
 import { resolve } from "node:path";
-import { ChainId } from "../lib/endpoints.js";
+import { ChainId } from "../lib/network.js";
 
 import { printTable } from "console-table-printer";
+import { KusamaNetwork } from "../lib/networks/kusama.js";
+import { PaseoNetwork } from "../lib/networks/paseo.js";
 
 @program()
 @version("1.0.0")
@@ -16,12 +18,30 @@ import { printTable } from "console-table-printer";
 )
 export class Program {
   private _optionValues: ClientCreateOptions = {
+    network: new KusamaNetwork(),
     withRelay: true,
     withUpgrade: false,
     withSiblings: [],
     runtimeLogLevel: RuntimeLogLevel.Info,
     wasmOverrides: {} as unknown as Record<ChainId, string>,
   };
+
+  @option(
+    "-n, --network <networkId>",
+    "Specify which network to use (default: kusama)",
+    (networkId: string) => {
+      console.log("Selected", networkId);
+
+      switch (networkId) {
+        case "paseo":
+          return new PaseoNetwork();
+        case "kusama":
+        default:
+          return new KusamaNetwork();
+      }
+    }
+  )
+  network = new KusamaNetwork();
 
   @option(
     "-R, --with-relay",
