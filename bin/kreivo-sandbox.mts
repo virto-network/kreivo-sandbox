@@ -30,8 +30,6 @@ export class Program {
     "-n, --network <networkId>",
     "Specify which network to use (default: kusama)",
     (networkId: string) => {
-      console.log("Selected", networkId);
-
       switch (networkId) {
         case "paseo":
           return new PaseoNetwork();
@@ -39,7 +37,8 @@ export class Program {
         default:
           return new KusamaNetwork();
       }
-    }
+    },
+    new KusamaNetwork()
   )
   network = new KusamaNetwork();
 
