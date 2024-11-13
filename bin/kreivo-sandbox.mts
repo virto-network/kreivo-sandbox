@@ -102,7 +102,10 @@ export class Program {
   runtimeLogLevel: RuntimeLogLevel = RuntimeLogLevel.Info;
 
   async run() {
-    const sandbox = new SandboxClient(this._optionValues);
+    const sandbox = new SandboxClient({
+      bindServer: true,
+      ...this._optionValues,
+    });
 
     await sandbox.initialize();
 

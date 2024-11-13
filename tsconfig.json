@@ -5,6 +5,7 @@
     "module": "NodeNext",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "declaration": true,
     "outDir": "dist"
   }
 }

@@ -49,14 +49,14 @@ export class SandboxClient {
 
   async initialize() {
     await this.kreivoClient.initialize({
-      port: this.getPort("kreivo"),
+      port: this.createOptions.bindServer ? this.getPort("kreivo") : undefined,
       runtimeLogLevel: this.createOptions.runtimeLogLevel,
       runtimeWasmOverride: this.createOptions.wasmOverrides?.kreivo,
     });
 
     if (this.relayClient) {
       await this.relayClient.initialize({
-        port: this.getPort("relay"),
+        port: this.createOptions.bindServer ? this.getPort("relay") : undefined,
         runtimeLogLevel: this.createOptions.runtimeLogLevel,
         runtimeWasmOverride: this.createOptions.wasmOverrides?.relay,
       });
@@ -69,7 +69,9 @@ export class SandboxClient {
     if (this.siblingChains.length) {
       for (const [siblingId, sibling, wasmOverride] of this.siblingChains) {
         await sibling.initialize({
-          port: this.getPort(siblingId),
+          port: this.createOptions.bindServer
+            ? this.getPort(siblingId)
+            : undefined,
           runtimeLogLevel: this.createOptions.runtimeLogLevel,
           runtimeWasmOverride: wasmOverride,
         });
