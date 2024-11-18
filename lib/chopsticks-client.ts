@@ -7,6 +7,7 @@ import {
 } from "@acala-network/chopsticks";
 
 import { ApiPromise } from "@polkadot/api";
+import { overrideWasm } from "@acala-network/chopsticks/utils/override";
 
 export enum RuntimeLogLevel {
   Off = 0,
@@ -41,6 +42,7 @@ export class ChopsticksClient {
         endpoint: this.endpoint,
         runtimeLogLevel,
       });
+      await overrideWasm(this.chain, runtimeWasmOverride);
     } else {
       const { chain } = await setupWithServer({
         "build-block-mode": BuildBlockMode.Instant,
