@@ -180,8 +180,8 @@ export class SandboxClient {
 
 `);
 
-    await api.tx.parachainSystem
-      .enactAuthorizedUpgrade(u8aToHex(newWasmRuntime))
+    await api.tx.system
+      .applyAuthorizedUpgradeWithoutChecks(u8aToHex(newWasmRuntime))
       .signAndSend(BOB);
 
     for (let i = 0; i < 2; i++) {
