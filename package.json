@@ -1,6 +1,6 @@
 {
   "name": "@virtonetwork/kreivo-sandbox",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "type": "module",
   "bin": {
     "kreivo-sandbox": "dist/bin/kreivo-sandbox.mjs",
