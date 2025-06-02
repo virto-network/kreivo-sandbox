@@ -147,8 +147,8 @@ export class SandboxClient {
               {
                 priority: 128,
                 call: {
-                  Inline: api.tx.parachainSystem
-                    .authorizeUpgrade(`0x${hash}`, true)
+                  Inline: api.tx.system
+                    .authorizeUpgradeWithoutChecks(`0x${hash}`)
                     .method.toHex(),
                 },
                 origin: {
