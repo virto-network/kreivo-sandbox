@@ -25,7 +25,7 @@ export type ClientInitializationOptions = {
 };
 
 export class ChopsticksClient {
-  constructor(private endpoint: string | string[]) {}
+  constructor(private endpoint: string | string[]) { }
 
   private chain?: Blockchain;
   private provider?: ChopsticksProvider;
@@ -41,6 +41,23 @@ export class ChopsticksClient {
         buildBlockMode: BuildBlockMode.Instant,
         endpoint: this.endpoint,
         runtimeLogLevel,
+        registeredTypes: {
+          typesBundle: {
+            spec: {
+              "kreivo-parachain": {
+                signedExtensions: {
+                  PassAuthenticate: {
+                    extrinsic: {
+                      authenticateParams:
+                        "Option<FcPalletPassExtensionsAuthenticateParams>",
+                    },
+                    payload: {}
+                  }
+                }
+              }
+            }
+          }
+        }
       });
       await overrideWasm(this.chain, runtimeWasmOverride);
     } else {
