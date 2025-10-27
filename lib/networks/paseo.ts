@@ -2,8 +2,10 @@ import { ChainId, Network } from "../network.js";
 
 export class PaseoNetwork implements Network {
   static endpoints: Partial<Record<ChainId, string | string[]>> = {
-    // TODO: We don't have public endpoints for Kreivo de Paseo… yet.
-    kreivo: process.env.KREIVO_PASEO_ENDPOINT!,
+    kreivo: process.env.KREIVO_PASEO_ENDPOINT || [
+      "wss://testnet.kreivo.io",
+      "wss://testnet.kreivo.kippu.rocks",
+    ],
     relay: process.env.PASEO_ENDPOINT || [
       "wss://rpc.ibp.network/paseo",
       "wss://paseo-rpc.dwellir.com",
