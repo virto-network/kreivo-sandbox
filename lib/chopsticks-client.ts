@@ -25,7 +25,7 @@ export type ClientInitializationOptions = {
 };
 
 export class ChopsticksClient {
-  constructor(private endpoint: string | string[]) { }
+  constructor(private endpoint: string | string[]) {}
 
   private chain?: Blockchain;
   private provider?: ChopsticksProvider;
@@ -51,13 +51,13 @@ export class ChopsticksClient {
                       authenticateParams:
                         "Option<FcPalletPassExtensionsAuthenticateParams>",
                     },
-                    payload: {}
-                  }
-                }
-              }
-            }
-          }
-        }
+                    payload: {},
+                  },
+                },
+              },
+            },
+          },
+        },
       });
       await overrideWasm(this.chain, runtimeWasmOverride);
     } else {
