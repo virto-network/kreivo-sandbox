@@ -36,28 +36,30 @@ export class ChopsticksClient {
     runtimeLogLevel = RuntimeLogLevel.Info,
     runtimeWasmOverride,
   }: ClientInitializationOptions = {}) {
+    const registeredTypes = {
+      typesBundle: {
+        spec: {
+          "kreivo-parachain": {
+            signedExtensions: {
+              PassAuthenticate: {
+                extrinsic: {
+                  authenticateParams:
+                    "Option<FcPalletPassExtensionsAuthenticateParams>",
+                },
+                payload: {},
+              },
+            },
+          },
+        },
+      },
+    };
+
     if (!port) {
       this.chain = await setup({
         buildBlockMode: BuildBlockMode.Instant,
         endpoint: this.endpoint,
         runtimeLogLevel,
-        registeredTypes: {
-          typesBundle: {
-            spec: {
-              "kreivo-parachain": {
-                signedExtensions: {
-                  PassAuthenticate: {
-                    extrinsic: {
-                      authenticateParams:
-                        "Option<FcPalletPassExtensionsAuthenticateParams>",
-                    },
-                    payload: {},
-                  },
-                },
-              },
-            },
-          },
-        },
+        registeredTypes,
       });
       await overrideWasm(this.chain, runtimeWasmOverride);
     } else {
@@ -67,6 +69,7 @@ export class ChopsticksClient {
         port,
         "runtime-log-level": runtimeLogLevel,
         "wasm-override": runtimeWasmOverride,
+        "registered-types": registeredTypes,
       });
 
       this.chain = chain;
