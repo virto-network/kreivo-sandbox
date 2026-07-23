@@ -29,25 +29,25 @@
   },
   "dependencies": {
     "@acala-network/chopsticks-executor": "^1.4.1",
-    "@inquirer/prompts": "^7.10.1",
+    "@inquirer/prompts": "^8.5.2",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@polkadot-api/forklift": "^0.2.6",
+    "@polkadot-api/forklift": "^0.4.1",
     "@polkadot-api/metadata-builders": "^0.14.3",
     "@polkadot-api/signer": "^0.3.3",
     "@polkadot-api/substrate-bindings": "^0.20.3",
-    "@polkadot-labs/hdkd-helpers": "^0.0.30",
-    "commander": "^14.0.3",
-    "console-table-printer": "^2.15.0",
+    "@polkadot-labs/hdkd-helpers": "^0.0.31",
+    "commander": "^15.0.0",
+    "console-table-printer": "^2.16.1",
     "express": "^5.1.0",
-    "polkadot-api": "^2.1.4",
+    "polkadot-api": "^2.2.1",
     "rxjs": "^7.8.2",
-    "typescript": "^5.9.3",
-    "ws": "^8.20.1",
+    "typescript": "^6.0.3",
+    "ws": "^8.21.1",
     "yaml": "^2.8.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@types/express": "^5.0.5",
-    "@tsconfig/node22": "^22.0.0"
+    "@tsconfig/node22": "^22.0.0",
+    "@types/express": "^5.0.5"
   }
 }
