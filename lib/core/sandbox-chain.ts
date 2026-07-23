@@ -1,7 +1,12 @@
 import { readFile } from "node:fs/promises";
 
 import { forklift, logger as forkliftLogger, type Forklift } from "@polkadot-api/forklift";
-import { getDynamicBuilder, getLookupFn } from "@polkadot-api/metadata-builders";
+import {
+  getDynamicBuilder,
+  getLookupFn,
+  type LookupEntry,
+  type MetadataLookup,
+} from "@polkadot-api/metadata-builders";
 import { decAnyMetadata, unifyMetadata } from "@polkadot-api/substrate-bindings";
 import { Binary, Enum, createClient, type HexString, type JsonRpcProvider } from "polkadot-api";
 
@@ -43,6 +48,17 @@ export type DecodedStorageChange = {
   value: unknown | null;
 };
 
+/**
+ * Chopsticks-style nested storage diff: pallet -> storage item -> a list of
+ * `[keyArgs, value]` entries. A string `value` is treated as already-encoded
+ * raw bytes (passed through as-is); any other value is SCALE-encoded via the
+ * item's dynamic value codec.
+ */
+export type LegacyStorageDiff = Record<
+  string,
+  Record<string, Array<[keyArgs: unknown[], value: unknown]>>
+>;
+
 const DEFAULT_BUILD_BLOCK_MODE: DelayModeInput = { timer: 0 };
 const DEFAULT_FINALIZE_MODE: DelayModeInput = { timer: 0 };
 
@@ -67,6 +83,157 @@ const normalizeStorageValue = (value: Uint8Array | string | null) => {
   }
 
   return Binary.fromHex(value as HexString);
+};
+
+const isByteSequenceEntry = (entry: LookupEntry) =>
+  (entry.type === "sequence" || entry.type === "array") &&
+  entry.value.type === "primitive" &&
+  entry.value.value === "u8";
+
+const toHexString = (value: string | Uint8Array): HexString =>
+  typeof value === "string" ? (value as HexString) : Binary.toHex(value);
+
+const getStorageValueTypeId = (lookup: MetadataLookup, pallet: string, entry: string) => {
+  const storageEntry = lookup.metadata.pallets
+    .find((p) => p.name === pallet)
+    ?.storage?.items.find((item) => item.name === entry);
+  if (!storageEntry) {
+    throw new Error(`Storage entry ${pallet}.${entry} is unavailable`);
+  }
+
+  return storageEntry.type.tag === "plain" ? storageEntry.type.value : storageEntry.type.value.value;
+};
+
+// Metadata field/variant names don't always match a caller's casing (e.g.
+// Rust's `hash` vs. a caller's `hash_`, or `system` vs. `System`).
+const normalizeName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const findMatchingKey = (candidates: Record<string, unknown>, name: string) =>
+  Object.keys(candidates).find((key) => normalizeName(key) === normalizeName(name));
+
+const unwrapVariantEntry = (variant: { type: string; value?: unknown }): LookupEntry =>
+  variant.type === "lookupEntry" ? (variant.value as LookupEntry) : (variant as unknown as LookupEntry);
+
+/** Fills in a struct field that a caller omitted, mirroring each field type's zero value. */
+const defaultCodecValue = (lookup: MetadataLookup, entry: LookupEntry): unknown => {
+  switch (entry.type) {
+    case "option":
+    case "void":
+      return undefined;
+    case "sequence":
+      return [];
+    case "array":
+      return isByteSequenceEntry(entry)
+        ? (`0x${"00".repeat(entry.len)}` as HexString)
+        : Array.from({ length: entry.len }, () => defaultCodecValue(lookup, entry.value));
+    case "tuple":
+      return entry.value.map((item) => defaultCodecValue(lookup, item));
+    case "struct":
+      return Object.fromEntries(
+        Object.entries(entry.value).map(([fieldName, fieldEntry]) => [
+          fieldName,
+          defaultCodecValue(lookup, fieldEntry),
+        ]),
+      );
+    case "primitive":
+      switch (entry.value) {
+        case "bool":
+          return false;
+        case "str":
+        case "char":
+          return "";
+        case "u64":
+        case "u128":
+        case "u256":
+        case "i64":
+        case "i128":
+        case "i256":
+          return 0n;
+        default:
+          return 0;
+      }
+    case "compact":
+      return entry.size === "u64" || entry.size === "u128" || entry.size === "u256" ? 0n : 0;
+    case "enum": {
+      const variants = Object.entries(entry.value).sort(([, a], [, b]) => a.idx - b.idx);
+      const [variantName, variant] = variants.find(([, v]) => v.type === "void") ?? variants[0];
+      if (!variant || variant.type === "void") {
+        return Enum(variantName);
+      }
+      return Enum(variantName, defaultCodecValue(lookup, unwrapVariantEntry(variant)));
+    }
+    default:
+      return undefined;
+  }
+};
+
+/**
+ * Converts a JSON-friendly decoded value (Chopsticks' convention: enum
+ * variants as single-key objects, e.g. `{System: "Root"}`) into the
+ * `Enum(tag, value)`-tagged shape the dynamic builder's codecs expect. Enum
+ * variants and struct fields are matched by normalized name, and any struct
+ * field the caller omitted is filled in with its zero value.
+ */
+const toCodecValue = (lookup: MetadataLookup, entry: LookupEntry, value: unknown): unknown => {
+  if (value === null || value === undefined) {
+    return value;
+  }
+
+  switch (entry.type) {
+    case "option":
+      return toCodecValue(lookup, entry.value, value);
+    case "tuple":
+      return (value as unknown[]).map((item, index) => toCodecValue(lookup, entry.value[index], item));
+    case "struct": {
+      const provided = value as Record<string, unknown>;
+      return Object.fromEntries(
+        Object.entries(entry.value).map(([fieldName, fieldEntry]) => {
+          const matchedKey = findMatchingKey(provided, fieldName);
+          return [
+            fieldName,
+            matchedKey === undefined
+              ? defaultCodecValue(lookup, fieldEntry)
+              : toCodecValue(lookup, fieldEntry, provided[matchedKey]),
+          ];
+        }),
+      );
+    }
+    case "array":
+      if (isByteSequenceEntry(entry)) {
+        // Fixed-size byte arrays use substrate-bindings' SizedBytes codec, which
+        // encodes via `fromHex` — it wants a hex string, not raw bytes.
+        return toHexString(value as string | Uint8Array);
+      }
+      return (value as unknown[]).map((item) => toCodecValue(lookup, entry.value, item));
+    case "sequence":
+      if (isByteSequenceEntry(entry)) {
+        return typeof value === "string" ? Binary.fromHex(value as HexString) : value;
+      }
+      return (value as unknown[]).map((item) => toCodecValue(lookup, entry.value, item));
+    case "enum": {
+      if (typeof value === "string") {
+        const matchedVariant = findMatchingKey(entry.value, value);
+        if (!matchedVariant) {
+          throw new Error(`Unknown enum variant "${value}"`);
+        }
+        return Enum(matchedVariant);
+      }
+
+      const [rawVariantName, innerValue] = Object.entries(value as Record<string, unknown>)[0];
+      const matchedVariant = findMatchingKey(entry.value, rawVariantName);
+      if (!matchedVariant) {
+        throw new Error(`Unknown enum variant "${rawVariantName}"`);
+      }
+      const variant = entry.value[matchedVariant];
+      if (variant.type === "void") {
+        return Enum(matchedVariant);
+      }
+
+      return Enum(matchedVariant, toCodecValue(lookup, unwrapVariantEntry(variant), innerValue));
+    }
+    default:
+      return value;
+  }
 };
 
 const serializeStorageDiff = (
@@ -131,6 +298,8 @@ export class SandboxChain {
         rpcOverrides: createSandboxRpcMethods({
           getInfo: () => this.getInfo(),
           destroy: () => this.destroy(),
+          setStorageRaw: (hash, changes) => this.setStorageRaw(hash, changes),
+          setStorageLegacy: (hash, diff) => this.setStorageLegacy(hash, diff),
         }) as Record<string, never>,
       },
     );
@@ -214,6 +383,31 @@ export class SandboxChain {
     );
 
     await this.setStorageRaw(hash, encodedChanges);
+  }
+
+  async setStorageLegacy(hash: HexString, legacyDiff: LegacyStorageDiff) {
+    const metadata = unifyMetadata(decAnyMetadata(await this.client().getMetadata(hash)));
+    const lookup = getLookupFn(metadata);
+    const builder = getDynamicBuilder(lookup);
+    const flatChanges: Record<string, Uint8Array | string | null> = {};
+
+    for (const [pallet, items] of Object.entries(legacyDiff)) {
+      for (const [entry, keyValuePairs] of Object.entries(items)) {
+        const storage = builder.buildStorage(pallet, entry);
+        const valueEntry = lookup(getStorageValueTypeId(lookup, pallet, entry));
+        for (const [keyArgs, value] of keyValuePairs) {
+          const rawKey = storage.keys.enc(...keyArgs);
+          flatChanges[rawKey] =
+            value === null
+              ? null
+              : typeof value === "string"
+                ? value
+                : storage.value.enc(toCodecValue(lookup, valueEntry, value));
+        }
+      }
+    }
+
+    await this.setStorageRaw(hash, flatChanges);
   }
 
   async getStorageDiff(hash: HexString, baseHash?: HexString) {

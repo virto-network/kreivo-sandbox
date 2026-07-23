@@ -1,6 +1,7 @@
 import { Binary, type HexString } from "polkadot-api";
 import { firstValueFrom } from "rxjs";
 
+import type { LegacyStorageDiff } from "../core/sandbox-chain.js";
 import type {
   SandboxInfo,
   SandboxNewBlockOptions,
@@ -99,10 +100,32 @@ const withRpcErrorBoundary =
 export const createSandboxRpcMethods = ({
   getInfo,
   destroy,
+  setStorageRaw,
+  setStorageLegacy,
 }: {
   getInfo(): Promise<SandboxInfo>;
   destroy(): Promise<void>;
+  setStorageRaw(
+    hash: HexString,
+    changes: Record<string, string | Uint8Array | null>,
+  ): Promise<void>;
+  setStorageLegacy(hash: HexString, diff: LegacyStorageDiff): Promise<void>;
 }): Record<string, RpcMethod> => ({
+  dev_setStorage: withRpcErrorBoundary(async (connection, request) => {
+    const [storageValues, blockHash] = getArrayParams(request) as [
+      Array<[string, string | null]> | LegacyStorageDiff,
+      HexString?,
+    ];
+    const targetHash = blockHash ?? (await getInfo()).bestHash;
+
+    if (Array.isArray(storageValues)) {
+      await setStorageRaw(targetHash, Object.fromEntries(storageValues));
+    } else {
+      await setStorageLegacy(targetHash, storageValues);
+    }
+
+    connection.send(respond(request.id, targetHash));
+  }),
   sandbox_newBlock: withRpcErrorBoundary(async (connection, request, context) => {
     const [options] = getArrayParams(request) as [SandboxNewBlockOptions?];
     const hash = await context.newBlock(decodeNewBlockOptions(options));
