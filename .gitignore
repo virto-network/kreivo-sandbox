@@ -2,3 +2,4 @@ node_modules
 *.wasm
 dist
 .DS_Store
+.kreivo-sandbox.yml

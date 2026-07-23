@@ -3,9 +3,10 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
     "declaration": true,
-    "outDir": "dist"
-  }
+    "outDir": "dist",
+    "verbatimModuleSyntax": true
+  },
+  "include": ["bin/**/*.mts", "lib/**/*.ts"],
+  "exclude": ["dist", "test", "tests"]
 }

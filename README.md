@@ -1,50 +1,116 @@
 # Kreivo Sandbox
 
-Allows launching and deploying sandbox environments to test features for Kreivo safely.
+Forklift-based sandbox orchestration for Kreivo, relay chains, and sibling parachains.
 
 ## Usage
 
-To get started with a bare fork of Kreivo, run:
+Start a sandbox with Kreivo only:
 
 ```bash
-npx @virtonetwork/kreivo-sandbox
+npx @virto-network/kreivo-sandbox
 ```
 
-### Connecting with Relay
-
-There's an option to include a connection with the Relay Chain. Useful to test XCM commands. Run:
+`start` remains available as an explicit alias:
 
 ```bash
-npx @virtonetwork/kreivo-sandbox -R/--with-relay
+npx @virto-network/kreivo-sandbox start
 ```
 
-### Connecting parachains
-
-If you want to connect with a sibling parachain that's within the list of available chains (`assetHub`
-for now), run the following command, separating the chain IDs with commas:
+Start a relay-connected topology:
 
 ```bash
-npx @virtonetwork/kreivo-sandbox --with-siblings <chainIds,...>
+npx @virto-network/kreivo-sandbox start --with-relay
 ```
 
-### Using a WASM to Upgrade
-
-If you have a WASM of the following runtime version, you can use it to emulate an upgrade. Run:
+Start with sibling parachains:
 
 ```bash
-npx @virtonetwork/kreivo-sandbox -U/--with-upgrade
+npx @virto-network/kreivo-sandbox start --with-siblings assetHub,people
 ```
 
-You can optionally set the path of the WASM to use for the emulated upgrade:
+Apply YAML storage overrides during startup:
 
 ```bash
-npx @virtonetwork/kreivo-sandbox -U -w/--upgrade-wasm-path <path>
+npx @virto-network/kreivo-sandbox start \
+  --storage-override-file ./overrides.yml \
+  --storage-override-file ./relay-overrides.yml
 ```
 
-### Other options
+The `start` command writes a manifest file at `.kreivo-sandbox.yml` by default. That manifest is used by the interactive governance flow.
 
-If you'd like to get more options, please run:
+## Governance Emulation
+
+Schedule a governance outcome through `Scheduler.Agenda` using metadata-driven origin discovery and an interactive TUI:
 
 ```bash
-npx @virtonetwork/kreivo-sandbox --help
+npx @virto-network/kreivo-sandbox governance schedule
+```
+
+The flow lets you:
+
+1. Select a sandbox chain from the generated manifest.
+2. Inspect and choose available origins, or paste a structured origin value as JSON/YAML.
+3. Provide call data and the block number to execute.
+
+## Chain Control
+
+Create a block against a running sandbox chain:
+
+```bash
+npx @virto-network/kreivo-sandbox block ws://127.0.0.1:12281
+```
+
+Change best/finalized heads:
+
+```bash
+npx @virto-network/kreivo-sandbox best ws://127.0.0.1:12281 0x...
+npx @virto-network/kreivo-sandbox finalize ws://127.0.0.1:12281 0x...
+```
+
+Destroy a running chain:
+
+```bash
+npx @virto-network/kreivo-sandbox destroy ws://127.0.0.1:12281
+```
+
+Replay a local block without mutating the sandbox head, returning per-phase logs, storage diff, and extrinsic results:
+
+```bash
+npx @virto-network/kreivo-sandbox replay-block ws://127.0.0.1:12281 0x...
+```
+
+## MCP
+
+Expose the running sandbox as an HTTP-based MCP debug console:
+
+```bash
+npx @virto-network/kreivo-sandbox --mcp --mcp-port 4224
+```
+
+You can give the live instance a stable MCP sandbox id:
+
+```bash
+npx @virto-network/kreivo-sandbox --mcp --register rehearsal-01
+```
+
+This starts the sandbox and exposes a Streamable HTTP MCP endpoint at `http://127.0.0.1:4224/mcp` for that exact running instance.
+
+## Runtime Upgrades
+
+Run the upgrade emulation flow after startup:
+
+```bash
+npx @virto-network/kreivo-sandbox start --with-upgrade --upgrade-wasm-path ./kreivo_runtime.compact.compressed.wasm
+```
+
+## Accounts Scope
+
+Community account-id utilities are no longer part of this package. That flow is being extracted toward a separate library such as `@virto-network/community-utilities`.
+
+## Help
+
+Show all CLI options:
+
+```bash
+npx @virto-network/kreivo-sandbox --help
 ```

@@ -1,7 +1,8 @@
 {
-  "name": "@virtonetwork/kreivo-sandbox",
-  "version": "1.6.2",
+  "name": "@virto-network/kreivo-sandbox",
+  "version": "2.0.0",
   "type": "module",
+  "packageManager": "bun@1.2.15",
   "bin": {
     "kreivo-sandbox": "dist/bin/kreivo-sandbox.mjs",
     "kreivo-sandbox-utils": "dist/bin/kreivo-sandbox-utils.mjs"
@@ -12,28 +13,41 @@
     ".": {
       "import": "./dist/lib/index.js",
       "types": "./dist/lib/index.d.ts"
+    },
+    "./endpoints": {
+      "import": "./dist/lib/config/endpoints.js",
+      "types": "./dist/lib/config/endpoints.d.ts"
     }
   },
   "scripts": {
-    "cli": "node --loader ts-node/esm bin/kreivo-sandbox.mts",
-    "utils": "node --loader ts-node/esm bin/kreivo-sandbox-utils.mts",
-    "prepack": "tsc",
-    "kusama:kreivo-with-relay": "node --loader ts-node/esm kusama/kreivo-with-relay.ts",
-    "kusama:kreivo-ah": "node --loader ts-node/esm kusama/kreivo-ah.ts",
-    "kusama:kreivo-upgrade": "node --loader ts-node/esm kusama/kreivo-upgrade.ts",
-    "util:community-sa": "node --loader ts-node/esm utils/construct-community-sa-in-kusama.ts"
+    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "bun test",
+    "cli": "bun run bin/kreivo-sandbox.mts",
+    "utils": "bun run bin/kreivo-sandbox-utils.mts",
+    "prepack": "bun run build"
   },
   "dependencies": {
-    "@acala-network/chopsticks": "^1.2.5",
-    "@polkadot/api": "^16.5.4",
-    "@polkadot/wasm-crypto": "^7.5.4",
-    "commander-ts": "^0.2.0",
-    "console-table-printer": "^2.15.0",
-    "hash-wasm": "^4.12.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "@acala-network/chopsticks-executor": "^1.4.1",
+    "@inquirer/prompts": "^8.5.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@polkadot-api/forklift": "^0.4.1",
+    "@polkadot-api/metadata-builders": "^0.14.3",
+    "@polkadot-api/signer": "^0.3.3",
+    "@polkadot-api/substrate-bindings": "^0.20.3",
+    "@polkadot-labs/hdkd-helpers": "^0.0.31",
+    "commander": "^15.0.0",
+    "console-table-printer": "^2.16.1",
+    "express": "^5.1.0",
+    "polkadot-api": "^2.2.1",
+    "rxjs": "^7.8.2",
+    "typescript": "^6.0.3",
+    "ws": "^8.21.1",
+    "yaml": "^2.8.1",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.0"
+    "@tsconfig/node22": "^22.0.0",
+    "@types/express": "^5.0.5"
   }
 }
